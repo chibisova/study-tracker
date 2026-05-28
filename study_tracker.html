@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study Tracker</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a1a; min-height: 100vh; }
+  .app { max-width: 780px; margin: 0 auto; padding: 2rem 1rem; }
+  h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #666; margin-bottom: 2rem; }
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 2rem; }
+  .stat { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 10px; padding: 14px; }
+  .stat-label { font-size: 12px; color: #888; margin-bottom: 6px; }
+  .stat-val { font-size: 22px; font-weight: 500; }
+  .stat-val.purple { color: #534AB7; }
+  .stat-val.teal { color: #0F6E56; }
+  .stat-val.amber { color: #854F0B; }
+  .stat-val.blue { color: #185FA5; }
+  .progress-bar-wrap { background: rgba(0,0,0,0.07); border-radius: 4px; height: 6px; margin-top: 8px; overflow: hidden; }
+  .progress-bar { height: 6px; border-radius: 4px; transition: width 0.3s; }
+  .pb-purple { background: #7F77DD; }
+  .pb-teal { background: #1D9E75; }
+  .pb-amber { background: #BA7517; }
+  .pb-blue { background: #378ADD; }
+
+  .week-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; }
+  .week-nav button { background: #fff; border: 0.5px solid rgba(0,0,0,0.15); border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: #1a1a1a; }
+  .week-nav button:hover { background: #f0efeb; }
+  .week-title { font-size: 15px; font-weight: 500; flex: 1; }
+  .week-phase { font-size: 12px; padding: 3px 10px; border-radius: 6px; }
+  .phase-1 { background: #EEEDFE; color: #3C3489; }
+  .phase-2 { background: #E1F5EE; color: #085041; }
+  .phase-3 { background: #E6F1FB; color: #0C447C; }
+
+  .day-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 2rem; }
+  .day-card { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 12px; padding: 14px; }
+  .day-card.today { border: 1.5px solid #7F77DD; }
+  .day-card.weekend { background: #fafaf8; }
+  .day-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .day-name { font-size: 13px; font-weight: 500; }
+  .day-date { font-size: 11px; color: #999; }
+  .today-badge { font-size: 11px; background: #EEEDFE; color: #3C3489; padding: 2px 8px; border-radius: 5px; }
+  .tasks { list-style: none; }
+  .task-item { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; border-top: 0.5px solid rgba(0,0,0,0.06); cursor: pointer; }
+  .task-item:first-child { border-top: none; }
+  .task-check { width: 16px; height: 16px; border: 1.5px solid #ccc; border-radius: 4px; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .task-check.done { background: #1D9E75; border-color: #1D9E75; }
+  .task-check.done::after { content: ''; display: block; width: 4px; height: 7px; border: 1.5px solid #fff; border-top: none; border-left: none; transform: rotate(45deg) translate(-1px, -1px); }
+  .task-label { font-size: 12px; color: #444; line-height: 1.4; flex: 1; }
+  .task-label.done { text-decoration: line-through; color: #aaa; }
+  .task-tag { font-size: 10px; padding: 1px 6px; border-radius: 4px; flex-shrink: 0; margin-top: 2px; }
+  .tag-course { background: #EEEDFE; color: #534AB7; }
+  .tag-leet { background: #E1F5EE; color: #085041; }
+  .tag-project { background: #E6F1FB; color: #185FA5; }
+  .tag-milestone { background: #FAEEDA; color: #633806; }
+  .tag-korean { background: #FBEAF0; color: #72243E; }
+  .weekend-label { font-size: 12px; color: #aaa; padding: 8px 0; text-align: center; }
+
+  .milestones { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 2rem; }
+  .milestones h3 { font-size: 14px; font-weight: 500; margin-bottom: 12px; color: #444; }
+  .milestone-item { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-top: 0.5px solid rgba(0,0,0,0.06); }
+  .milestone-item:first-of-type { border-top: none; }
+  .m-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .m-dot.done { background: #1D9E75; }
+  .m-dot.upcoming { background: #ccc; }
+  .m-dot.urgent { background: #E24B4A; }
+  .m-text { font-size: 13px; flex: 1; }
+  .m-date { font-size: 11px; color: #999; }
+
+  .streak-section { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 2rem; }
+  .streak-section h3 { font-size: 14px; font-weight: 500; margin-bottom: 12px; color: #444; }
+  .heatmap { display: flex; flex-wrap: wrap; gap: 3px; }
+  .hm-cell { width: 14px; height: 14px; border-radius: 3px; background: rgba(0,0,0,0.07); }
+  .hm-cell.active { background: #7F77DD; }
+  .hm-cell.partial { background: #AFA9EC; }
+
+  .reset-btn { font-size: 12px; color: #aaa; background: none; border: none; cursor: pointer; padding: 4px 0; }
+  .reset-btn:hover { color: #E24B4A; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Study tracker</h1>
+  <p class="subtitle" id="today-label">Loading...</p>
+
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-label">Days done</div>
+      <div class="stat-val purple" id="stat-days">0</div>
+      <div class="progress-bar-wrap"><div class="progress-bar pb-purple" id="pb-days" style="width:0%"></div></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Tasks completed</div>
+      <div class="stat-val teal" id="stat-tasks">0</div>
+      <div class="progress-bar-wrap"><div class="progress-bar pb-teal" id="pb-tasks" style="width:0%"></div></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">LeetCode done</div>
+      <div class="stat-val amber" id="stat-leet">0</div>
+      <div class="progress-bar-wrap"><div class="progress-bar pb-amber" id="pb-leet" style="width:0%"></div></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Current streak</div>
+      <div class="stat-val blue" id="stat-streak">0</div>
+      <div class="progress-bar-wrap"><div class="progress-bar pb-blue" id="pb-streak" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="week-nav">
+    <button onclick="prevWeek()"><i class="ti ti-arrow-left"></i></button>
+    <div>
+      <div class="week-title" id="week-title">Week 1</div>
+      <div style="font-size:12px;color:#888;" id="week-dates"></div>
+    </div>
+    <span class="week-phase" id="week-phase-badge">Phase 1</span>
+    <button onclick="nextWeek()"><i class="ti ti-arrow-right"></i></button>
+  </div>
+
+  <div class="day-grid" id="day-grid"></div>
+
+  <div class="milestones">
+    <h3>Milestones</h3>
+    <div id="milestones-list"></div>
+  </div>
+
+  <div class="streak-section">
+    <h3>Activity — last 84 days</h3>
+    <div class="heatmap" id="heatmap"></div>
+    <br>
+    <button class="reset-btn" onclick="if(confirm('Reset all progress?')) { localStorage.clear(); location.reload(); }">Reset all progress</button>
+  </div>
+</div>
+
+<script>
+const START_DATE = new Date('2025-06-02');
+
+const WEEKS = [
+  { title: 'Week 1', phase: 1, focus: 'Numpy + ML basics', days: [
+    { label: 'Mon', tasks: [
+      { text: 'AI504 week 1 — intro + numpy notebook', tag: 'course' },
+      { text: 'LeetCode: array easy', tag: 'leet' },
+    ]},
+    { label: 'Tue', tasks: [
+      { text: 'AI504 week 1 — numpy practice continued', tag: 'course' },
+      { text: 'LeetCode: two sum', tag: 'leet' },
+    ]},
+    { label: 'Wed', tasks: [
+      { text: 'AI504 week 2 — supervised/unsupervised theory', tag: 'course' },
+      { text: 'LeetCode: contains duplicate', tag: 'leet' },
+      { text: 'Korean class 7–9pm', tag: 'korean' },
+    ]},
+    { label: 'Thu', tasks: [
+      { text: 'AI504 week 2 — scikit-learn + matplotlib practice', tag: 'course' },
+      { text: 'LeetCode: best time to buy stock', tag: 'leet' },
+    ]},
+    { label: 'Fri', tasks: [
+      { text: 'Review week 1–2 notebooks, redo any unclear parts', tag: 'course' },
+      { text: 'LeetCode: valid anagram', tag: 'leet' },
+    ]},
+  ]},
+  { title: 'Week 2', phase: 1, focus: 'PyTorch basics', days: [
+    { label: 'Mon', tasks: [
+      { text: 'AI504 week 3 — PyTorch intro + autograd', tag: 'course' },
+      { text: 'LeetCode: string easy', tag: 'leet' },
+    ]},
+    { label: 'Tue', tasks: [
+      { text: 'AI504 week 3 — logistic regression practice', tag: 'course' },
+      { text: 'LeetCode: valid palindrome', tag: 'leet' },
+    ]},
+    { label: 'Wed', tasks: [
+      { text: 'AI504 week 3 — MLP on MNIST', tag: 'course' },
+      { text: 'LeetCode: longest common prefix', tag: 'leet' },
+      { text: 'Korean class 7–9pm', tag: 'korean' },
+    ]},
+    { label: 'Thu', tasks: [
+      { text: 'Build MNIST classifier from scratch (no tutorial)', tag: 'course' },
+      { text: 'LeetCode: hashmap easy', tag: 'leet' },
+    ]},
+    { label: 'Fri', tasks: [
+      { text: 'Push MNIST classifier to GitHub', tag: 'milestone' },
+      { text: 'LeetCode: two sum revisit with hashmap', tag: 'leet' },
+    ]},
+  ]},
+  { title: 'Week 3', phase: 1, focus: 'Autoencoders + VAE', days: [
+    { label: 'Mon', tasks: [
+      { text: 'AI504 week 4 — autoencoder theory', tag: 'course' },
+      { text: 'LeetCode: hashmap medium', tag: 'leet' },
+    ]},
+    { label: 'Tue', tasks: [
+      { text: 'AI504 week 4 — build denoising autoencoder', tag: 'course' },
+      { text: 'LeetCode: group anagrams', tag: 'leet' },
+    ]},
+    { label: 'Wed', tasks: [
+      { text: 'AI504 week 5 — VAE theory + variational inference', tag: 'course' },
+      { text: 'LeetCode: top k frequent elements', tag: 'leet' },
+      { text: 'Korean class 7–9pm', tag: 'korean' },
+    ]},
+    { label: 'Thu', tasks: [
+      { text: 'AI504 week 5 — implement VAE on MNIST', tag: 'course' },
+      { text: 'LeetCode: two pointers easy', tag: 'leet' },
+    ]},
+    { label: 'Fri', tasks: [
+      { text: 'Generate + visualize latent space from VAE', tag: 'course' },
+      { text: 'LeetCode: valid palindrome II', tag: 'leet' },
+    ]},
+  ]},
+  { title: 'Week 4', phase: 1, focus: 'GAN + CNN', days: [
+    { label: 'Mon', tasks: [
+      { text: 'AI504 week 6 — GAN theory, min-max game', tag: 'course' },
+      { text: 'LeetCode: sliding window easy', tag: 'leet' },
+    ]},
+    { label: 'Tue', tasks: [
+      { text: 'AI504 week 6 — implement GAN, evaluate FID', tag: 'course' },
+      { text: 'LeetCode: max avg subarray', tag: 'leet' },
+    ]},
+    { label: 'Wed', tasks: [
+      { text: 'AI504 week 7 — CNN theory, ResNet', tag: 'course' },
+      { text: 'LeetCode: longest substring no repeat', tag: 'leet' },
+      { text: 'Korean class 7–9pm', tag: 'korean' },
+    ]},
+    { label: 'Thu', tasks: [
+      { text: 'AI504 week 7 — implement ResNet on MNIST', tag: 'course' },
+      { text: 'LeetCode: trees easy', tag: 'leet' },
+    ]},
+    { label: 'Fri', tasks: [
+      { text: 'AI504 foundation complete — review all notebooks', tag: 'milestone' },
+      { text: 'LeetCode: max depth binary tree', tag: 'leet' },
+    ]},
+  ]},
+  { title: 'Week 5', phase: 2, focus: '3D representations', days: [
+    { label: 'Mon', tasks: [
+      { text: 'CS479 week 1 — 3D representations overview', tag: 'course' },
+      { text: 'Create project GitHub repo', tag: 'milestone' },
+      { text: 'LeetCode: trees medium', tag: 'leet' },
+    ]},
+    { label: 'Tue', tasks: [
+      { text: 'CS479 week 2 — point clouds 1', tag: 'course' },
+      { text: 'LeetCode: invert binary tree', tag: 'leet' },
+    ]},
+    { label: 'Wed', tasks: [
+      { text: 'CS479 week 2 — point clouds 2 + PointNet assignment', tag: 'course' },
+      { text: 'LeetCode: binary tree level order', tag: 'leet' },
+      { text: 'Korean class 7–9pm', tag: 'korean' },
+    ]},
+    { label: 'Thu', tasks: [
+      { text: 'CS479 week 3 — implicit neural representations', tag: 'course' },
+      { text: 'LeetCode: validate BST', tag: 'leet' },
+    ]},
+    { label: 'Fri', tasks: [
+      { text: 'CS479 week 4 — camera model, epipolar geometry', tag: 'course' },
+      { text: 'LeetCode: graph easy', tag: 'leet' },
+    ]},
+  ]},
+  { title: 'Week 6', phase: 2, focus: 'NeRF + install Nerfstudio', days: [
+    { label: 'Mon', tasks: [
+      { text: 'CS479 week 5 — NeRF theory + slides', tag: 'course' },
+      { text: 'Install Nerfstudio', tag: 'milestone' },
+      { text: 'LeetCode: number of islands', tag: 'leet' },
+    ]},
+    { label: 'Tue', tasks: [
+      { text: 'CS479 NeRF assignment — implement NeRF', tag: 'course' },
+      { text: 'LeetCode: clone graph', tag: 'leet' },
+    ]},
+    { label: 'Wed', tasks: [
+      { text: 'CS479 week 6 — hybrid representations', tag: 'course' },
+      { text: 'Run Nerfstudio on one scene', tag: 'project' },
+      { text: 'Korean class 7–9pm', tag: 'korean' },
+    ]},
+    { label: 'Thu', tasks: [
+      { text: 'Debug Nerfstudio run, document results', tag: 'project' },
+      { text: 'LeetCode: course schedule', tag: 'leet' },
+    ]},
+    { label: 'Fri', tasks: [
+      { text: 'Nerfstudio scene on GitHub with README', tag: 'milestone' },
+      { text: 'LeetCode: pacific atlantic water flow', tag: 'leet' },
+    ]},
+  ]},
+  { title: 'Week 7', phase: 2, focus: '3DGS + internship apply', days: [
+    { label: 'Mon', tasks: [
+      { text: 'CS479 week 7 — Gaussian Splatting slides + recording', tag: 'course' },
+      { text: 'Read Gaussian Grouping paper', tag: 'course' },
+      { text: 'LeetCode: medium graphs', tag: 'leet' },
+    ]},
+    { label: 'Tue', tasks: [
+      { text: 'CS479 Gaussian Splatting assignment', tag: 'course' },
+      { text: 'Draft email to Hanbyul Joo lab', tag: 'milestone' },
+      { text: 'LeetCode: redundant connection', tag: 'leet' },
+    ]},
+    { label: 'Wed', tasks: [
+      { text: 'CS479 NerfStudio demo session', tag: 'course' },
+      { text: 'Send internship application — Hanbyul Joo lab', tag: 'milestone' },
+      { text: 'Korean class 7–9pm', tag: 'korean' },
+    ]},
+    { label: 'Thu', tasks: [
+      { text: 'Read SuGaR paper (mesh from Gaussians)', tag: 'course' },
+      { text: 'LeetCode: word ladder', tag: 'leet' },
+    ]},
+    { label: 'Fri', tasks: [
+      { text: 'Set up Gaussian Grouping locally', tag: 'project' },
+      { text: 'LeetCode: graph medium review', tag: 'leet' },
+    ]},
+  ]},
+  { title: 'Week 8', phase: 2, focus: 'Project pipeline', days: [
+    { label: 'Mon', tasks: [
+      { text: 'Run Gaussian Grouping on captured scene', tag: 'project' },
+      { text: 'LeetCode: dynamic programming easy', tag: 'leet' },
+    ]},
+    { label: 'Tue', tasks: [
+      { text: 'Run SuGaR mesh extraction on grouped Gaussians', tag: 'project' },
+      { text: 'LeetCode: climbing stairs', tag: 'leet' },
+    ]},
+    { label: 'Wed', tasks: [
+      { text: 'Debug pipeline end to end', tag: 'project' },
+      { text: 'LeetCode: coin change', tag: 'leet' },
+      { text: 'Korean class 7–9pm', tag: 'korean' },
+    ]},
+    { label: 'Thu', tasks: [
+      { text: 'Document pipeline results with visuals', tag: 'project' },
+      { text: 'LeetCode: longest increasing subsequence', tag: 'leet' },
+    ]},
+    { label: 'Fri', tasks: [
+      { text: 'Gaussian Grouping + SuGaR pipeline working — push to GitHub', tag: 'milestone' },
+      { text: 'LeetCode: DP medium', tag: 'leet' },
+    ]},
+  ]},
+  { title: 'Week 9', phase: 3, focus: 'Diffusion + physics layer', days: [
+    { label: 'Mon', tasks: [
+      { text: 'CS479 week 14 — DDPM + DDIM theory', tag: 'course' },
+      { text: 'Read MPMAvatar paper', tag: 'course' },
+      { text: 'LeetCode: DP medium', tag: 'leet' },
+    ]},
+    { label: 'Tue', tasks: [
+      { text: 'CS479 week 14 — implement DDPM', tag: 'course' },
+      { text: 'Plan physics annotation layer for project', tag: 'project' },
+      { text: 'LeetCode: unique paths', tag: 'leet' },
+    ]},
+    { label: 'Wed', tasks: [
+      { text: 'CS479 week 15 — CLIP + multimodal', tag: 'course' },
+      { text: 'Start physics property tagging on extracted meshes', tag: 'project' },
+      { text: 'Korean class 7–9pm', tag: 'korean' },
+    ]},
+    { label: 'Thu', tasks: [
+      { text: 'Implement basic rigid body interaction on mesh', tag: 'project' },
+      { text: 'LeetCode: binary search', tag: 'leet' },
+    ]},
+    { label: 'Fri', tasks: [
+      { text: 'Physics layer prototype working', tag: 'milestone' },
+      { text: 'LeetCode: search rotated sorted array', tag: 'leet' },
+    ]},
+  ]},
+  { title: 'Week 10', phase: 3, focus: 'Project polish', days: [
+    { label: 'Mon', tasks: [
+      { text: 'Record demo video of full pipeline', tag: 'project' },
+      { text: 'LeetCode: medium review', tag: 'leet' },
+    ]},
+    { label: 'Tue', tasks: [
+      { text: 'Write project README + methodology section', tag: 'project' },
+      { text: 'LeetCode: find minimum in rotated array', tag: 'leet' },
+    ]},
+    { label: 'Wed', tasks: [
+      { text: 'Add comparison: before/after physics interaction', tag: 'project' },
+      { text: 'Korean class 7–9pm', tag: 'korean' },
+    ]},
+    { label: 'Thu', tasks: [
+      { text: 'Final GitHub cleanup — star-worthy repo', tag: 'project' },
+      { text: 'LeetCode: medium consolidation', tag: 'leet' },
+    ]},
+    { label: 'Fri', tasks: [
+      { text: 'Project complete and public on GitHub', tag: 'milestone' },
+      { text: 'LeetCode: interval easy', tag: 'leet' },
+    ]},
+  ]},
+  { title: 'Week 11', phase: 3, focus: 'MS application', days: [
+    { label: 'Mon', tasks: [
+      { text: 'Write research statement draft 1', tag: 'milestone' },
+      { text: 'LeetCode: merge intervals', tag: 'leet' },
+    ]},
+    { label: 'Tue', tasks: [
+      { text: 'Revise research statement — focus on 3DGS + physics angle', tag: 'milestone' },
+      { text: 'LeetCode: insert interval', tag: 'leet' },
+    ]},
+    { label: 'Wed', tasks: [
+      { text: 'Cold email Prof. T-K Kim (KCVL lab)', tag: 'milestone' },
+      { text: 'Contact recommenders', tag: 'milestone' },
+      { text: 'Korean class 7–9pm', tag: 'korean' },
+    ]},
+    { label: 'Thu', tasks: [
+      { text: 'Prepare KAIST application documents', tag: 'milestone' },
+      { text: 'LeetCode: non-overlapping intervals', tag: 'leet' },
+    ]},
+    { label: 'Fri', tasks: [
+      { text: 'Review full application package', tag: 'milestone' },
+      { text: 'LeetCode: stack easy', tag: 'leet' },
+    ]},
+  ]},
+  { title: 'Week 12', phase: 3, focus: 'Submit + TOPIK sprint', days: [
+    { label: 'Mon', tasks: [
+      { text: 'Final KAIST application review', tag: 'milestone' },
+      { text: 'TOPIK: grammar review sprint', tag: 'korean' },
+      { text: 'LeetCode: valid parentheses', tag: 'leet' },
+    ]},
+    { label: 'Tue', tasks: [
+      { text: 'Submit KAIST MS application', tag: 'milestone' },
+      { text: 'TOPIK: reading comprehension practice', tag: 'korean' },
+      { text: 'LeetCode: min stack', tag: 'leet' },
+    ]},
+    { label: 'Wed', tasks: [
+      { text: 'TOPIK: writing practice', tag: 'korean' },
+      { text: 'Project final cleanup', tag: 'project' },
+      { text: 'Korean class 7–9pm', tag: 'korean' },
+    ]},
+    { label: 'Thu', tasks: [
+      { text: 'TOPIK: full mock test', tag: 'korean' },
+      { text: 'LeetCode: final review', tag: 'leet' },
+    ]},
+    { label: 'Fri', tasks: [
+      { text: '3-month plan complete', tag: 'milestone' },
+      { text: 'Reflect: what changed, what comes next', tag: 'milestone' },
+    ]},
+  ]},
+];
+
+const MILESTONES = [
+  { text: 'MNIST classifier on GitHub', week: 2, tag: 'W2' },
+  { text: 'AI504 foundation complete (weeks 1–7)', week: 4, tag: 'W4' },
+  { text: 'Project repo created', week: 5, tag: 'W5' },
+  { text: 'Nerfstudio running on one scene', week: 6, tag: 'W6' },
+  { text: 'Hanbyul Joo lab application sent', week: 7, tag: 'W7', urgent: true },
+  { text: 'Full pipeline (Gaussian Grouping + SuGaR) on GitHub', week: 8, tag: 'W8' },
+  { text: 'Physics layer prototype working', week: 9, tag: 'W9' },
+  { text: 'Project complete and public', week: 10, tag: 'W10' },
+  { text: 'Cold email Prof. T-K Kim sent', week: 11, tag: 'W11' },
+  { text: 'KAIST MS application submitted', week: 12, tag: 'W12', urgent: true },
+];
+
+let currentWeek = 0;
+let state = {};
+
+function getKey(weekIdx, dayIdx, taskIdx) {
+  return `w${weekIdx}_d${dayIdx}_t${taskIdx}`;
+}
+
+function loadState() {
+  try { state = JSON.parse(localStorage.getItem('studytracker') || '{}'); } catch(e) { state = {}; }
+}
+
+function saveState() {
+  localStorage.setItem('studytracker', JSON.stringify(state));
+}
+
+function toggleTask(weekIdx, dayIdx, taskIdx) {
+  const key = getKey(weekIdx, dayIdx, taskIdx);
+  state[key] = !state[key];
+  saveState();
+  render();
+}
+
+function getToday() {
+  const now = new Date();
+  now.setHours(0,0,0,0);
+  return now;
+}
+
+function getWeekStart(weekIdx) {
+  const d = new Date(START_DATE);
+  d.setDate(d.getDate() + weekIdx * 7);
+  return d;
+}
+
+function getDayDate(weekIdx, dayIdx) {
+  const d = getWeekStart(weekIdx);
+  d.setDate(d.getDate() + dayIdx);
+  return d;
+}
+
+function isToday(weekIdx, dayIdx) {
+  const d = getDayDate(weekIdx, dayIdx);
+  const today = getToday();
+  return d.getTime() === today.getTime();
+}
+
+function formatDate(d) {
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function countStats() {
+  let totalTasks = 0, doneTasks = 0, leet = 0;
+  WEEKS.forEach((w, wi) => {
+    w.days.forEach((d, di) => {
+      d.tasks.forEach((t, ti) => {
+        totalTasks++;
+        if (state[getKey(wi, di, ti)]) {
+          doneTasks++;
+          if (t.tag === 'leet') leet++;
+        }
+      });
+    });
+  });
+  const today = getToday();
+  let daysDone = 0;
+  for (let wi = 0; wi < WEEKS.length; wi++) {
+    for (let di = 0; di < 5; di++) {
+      const d = getDayDate(wi, di);
+      if (d > today) break;
+      const wk = WEEKS[wi];
+      const tasks = wk.days[di].tasks;
+      const allDone = tasks.every((t, ti) => state[getKey(wi, di, ti)]);
+      if (allDone && tasks.length > 0) daysDone++;
+    }
+  }
+  let streak = 0;
+  let check = new Date(today);
+  while (true) {
+    check.setDate(check.getDate() - 1);
+    if (check < START_DATE) break;
+    const diff = Math.round((check - START_DATE) / 86400000);
+    const wi = Math.floor(diff / 7);
+    const di = diff % 7;
+    if (wi >= WEEKS.length || di >= 5) continue;
+    const tasks = WEEKS[wi].days[di].tasks;
+    if (tasks.every((t, ti) => state[getKey(wi, di, ti)]) && tasks.length > 0) streak++;
+    else break;
+  }
+  return { totalTasks, doneTasks, leet, daysDone, streak };
+}
+
+function isMilestoneDone(m) {
+  const wi = m.week - 1;
+  const week = WEEKS[wi];
+  let found = false;
+  week.days.forEach((d, di) => {
+    d.tasks.forEach((t, ti) => {
+      if (t.tag === 'milestone' && state[getKey(wi, di, ti)]) found = true;
+    });
+  });
+  return found;
+}
+
+function render() {
+  const today = getToday();
+  const stats = countStats();
+
+  document.getElementById('today-label').textContent =
+    today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) +
+    ' · June 2 – August 22';
+
+  document.getElementById('stat-days').textContent = stats.daysDone;
+  document.getElementById('stat-tasks').textContent = stats.doneTasks;
+  document.getElementById('stat-leet').textContent = stats.leet;
+  document.getElementById('stat-streak').textContent = stats.streak + (stats.streak === 1 ? ' day' : ' days');
+  document.getElementById('pb-days').style.width = Math.round(stats.daysDone / 60 * 100) + '%';
+  document.getElementById('pb-tasks').style.width = Math.round(stats.doneTasks / stats.totalTasks * 100) + '%';
+  document.getElementById('pb-leet').style.width = Math.round(stats.leet / 60 * 100) + '%';
+  document.getElementById('pb-streak').style.width = Math.min(100, Math.round(stats.streak / 14 * 100)) + '%';
+
+  const week = WEEKS[currentWeek];
+  document.getElementById('week-title').textContent = week.title + ' — ' + week.focus;
+  const ws = getWeekStart(currentWeek);
+  const we = new Date(ws); we.setDate(we.getDate() + 4);
+  document.getElementById('week-dates').textContent = formatDate(ws) + ' – ' + formatDate(we);
+  const badge = document.getElementById('week-phase-badge');
+  badge.textContent = 'Phase ' + week.phase;
+  badge.className = 'week-phase phase-' + week.phase;
+
+  const grid = document.getElementById('day-grid');
+  grid.innerHTML = '';
+  week.days.forEach((day, di) => {
+    const dayDate = getDayDate(currentWeek, di);
+    const isFuture = dayDate > today;
+    const todayDay = isToday(currentWeek, di);
+    const card = document.createElement('div');
+    card.className = 'day-card' + (todayDay ? ' today' : '');
+    let header = `<div class="day-header"><div><div class="day-name">${day.label}</div><div class="day-date">${formatDate(dayDate)}</div></div>${todayDay ? '<span class="today-badge">today</span>' : ''}</div>`;
+    let tasks = '<ul class="tasks">';
+    day.tasks.forEach((task, ti) => {
+      const key = getKey(currentWeek, di, ti);
+      const done = !!state[key];
+      tasks += `<li class="task-item" onclick="toggleTask(${currentWeek},${di},${ti})">
+        <div class="task-check ${done ? 'done' : ''}"></div>
+        <span class="task-label ${done ? 'done' : ''}">${task.text}</span>
+        <span class="task-tag tag-${task.tag}">${task.tag}</span>
+      </li>`;
+    });
+    tasks += '</ul>';
+    card.innerHTML = header + tasks;
+    grid.appendChild(card);
+  });
+
+  const ml = document.getElementById('milestones-list');
+  ml.innerHTML = '';
+  MILESTONES.forEach(m => {
+    const done = isMilestoneDone(m);
+    const weekStart = getWeekStart(m.week - 1);
+    const item = document.createElement('div');
+    item.className = 'milestone-item';
+    const dotClass = done ? 'done' : m.urgent ? 'urgent' : 'upcoming';
+    item.innerHTML = `<div class="m-dot ${dotClass}"></div><div class="m-text" style="${done ? 'text-decoration:line-through;color:#aaa' : ''}">${m.text}</div><div class="m-date">${m.tag} · ${formatDate(weekStart)}</div>`;
+    ml.appendChild(item);
+  });
+
+  const heatmap = document.getElementById('heatmap');
+  heatmap.innerHTML = '';
+  for (let i = 0; i < 84; i++) {
+    const d = new Date(START_DATE);
+    d.setDate(d.getDate() + i);
+    const wi = Math.floor(i / 7);
+    const di = i % 7;
+    const cell = document.createElement('div');
+    cell.className = 'hm-cell';
+    if (d > today) {
+      cell.style.opacity = '0.3';
+    } else if (wi < WEEKS.length && di < 5) {
+      const tasks = WEEKS[wi].days[di].tasks;
+      const doneCount = tasks.filter((t, ti) => state[getKey(wi, di, ti)]).length;
+      if (doneCount === tasks.length && tasks.length > 0) cell.classList.add('active');
+      else if (doneCount > 0) cell.classList.add('partial');
+    }
+    heatmap.appendChild(cell);
+  }
+}
+
+function prevWeek() { if (currentWeek > 0) { currentWeek--; render(); } }
+function nextWeek() { if (currentWeek < WEEKS.length - 1) { currentWeek++; render(); } }
+
+function autoSelectWeek() {
+  const today = getToday();
+  for (let wi = 0; wi < WEEKS.length; wi++) {
+    const ws = getWeekStart(wi);
+    const we = new Date(ws); we.setDate(we.getDate() + 6);
+    if (today >= ws && today <= we) { currentWeek = wi; return; }
+  }
+  if (today < START_DATE) currentWeek = 0;
+  else currentWeek = WEEKS.length - 1;
+}
+
+loadState();
+autoSelectWeek();
+render();
+</script>
+</body>
+</html>
